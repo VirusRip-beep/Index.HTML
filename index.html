@@ -60,7 +60,16 @@
         }
         .action-btn:disabled { opacity: 0.4; cursor: not-allowed; }
 
-        /* Plinko Logs */
+        /* Plinko Board Wrapper */
+        .plinko-container { position: relative; width: 280px; height: 310px; }
+        .plinko-labels {
+            position: absolute; bottom: 0; left: 0; width: 280px; height: 30px;
+            display: flex; justify-content: space-between; pointer-events: none; z-index: 10;
+        }
+        .plinko-label-item {
+            flex: 1; display: flex; align-items: center; justify-content: center;
+            font-size: 10px; font-weight: 900; color: #fff; text-shadow: 0 1px 3px #000;
+        }
         .plinko-log { width: 100%; background: #030712; border-radius: 10px; padding: 8px; margin-top: 8px; font-size: 12px; text-align: center; color: var(--gold); border: 1px solid #1f2937; }
 
         /* Slots */
@@ -76,7 +85,7 @@
 
         /* Wheel Pointer */
         .wheel-wrapper { position: relative; display: flex; flex-direction: column; align-items: center; }
-        .wheel-pointer { font-size: 24px; position: absolute; top: -10px; z-index: 10; color: var(--red); text-shadow: 0 2px 5px #000; }
+        .wheel-pointer { font-size: 30px; position: absolute; top: -14px; z-index: 10; color: var(--red); text-shadow: 0 2px 6px #000; }
 
         /* Profile */
         .prof-card { width: 100%; text-align: left; background: #1f2937; border-radius: 12px; padding: 12px; margin-bottom: 10px; border: 1px solid #374151; }
@@ -114,7 +123,18 @@
 
     <!-- 1. PLINKO -->
     <div id="plinko-game" class="game-card tab-content">
-        <div id="plinko-board"></div>
+        <div class="plinko-container">
+            <div id="plinko-board"></div>
+            <div class="plinko-labels">
+                <div class="plinko-label-item">x10</div>
+                <div class="plinko-label-item">x2</div>
+                <div class="plinko-label-item">x0.5</div>
+                <div class="plinko-label-item">x0.2</div>
+                <div class="plinko-label-item">x0.5</div>
+                <div class="plinko-label-item">x2</div>
+                <div class="plinko-label-item">x10</div>
+            </div>
+        </div>
         <div class="plinko-log" id="plinko-results">Ожидание запуска...</div>
         <div class="controls">
             <div class="input-group">
@@ -229,7 +249,6 @@
         let history = JSON.parse(localStorage.getItem('vir_history')) || [];
         let lastBonus = localStorage.getItem('vir_last_bonus');
 
-        // Данные юзера Telegram
         if (tg.initDataUnsafe && tg.initDataUnsafe.user) {
             let u = tg.initDataUnsafe.user;
             document.getElementById('user-name').innerText = '👤 ' + u.first_name;
@@ -294,7 +313,7 @@
             document.querySelectorAll('.tab-btn').forEach(b => b.className = 'tab-btn');
             document.getElementById(tab + (tab === 'profile' ? '-page' : '-game')).style.display = 'flex';
             btn.classList.add('active-' + tab);
-            if(tab === 'wheel') drawWheel();
+            if(tab === 'wheel') drawWheel(0);
             if(tab === 'mines' && document.getElementById('mines-board').children.length === 0) resetMinesBoard();
         }
 
@@ -309,10 +328,9 @@
         const render = Render.create({
             element: document.getElementById('plinko-board'),
             engine: engine,
-            options: { width: 280, height: 300, wireframes: false, background: '#030712' }
+            options: { width: 280, height: 310, wireframes: false, background: '#030712' }
         });
 
-        // Крупные гвозди
         for (let i = 0; i < 7; i++) {
             let count = i + 3;
             let spacing = 280 / (count + 1);
@@ -328,7 +346,7 @@
         const bWidth = 280 / mults.length;
 
         for (let i = 0; i < mults.length; i++) {
-            Composite.add(engine.world, Bodies.rectangle(i * bWidth + bWidth / 2, 290, bWidth - 2, 20, {
+            Composite.add(engine.world, Bodies.rectangle(i * bWidth + bWidth / 2, 295, bWidth - 2, 28, {
                 isStatic: true, isSensor: true, render: { fillStyle: colors[i] }, label: `m_${mults[i]}`
             }));
         }
@@ -420,22 +438,34 @@
             }, 2000);
         }
 
-        /* --- 3. WHEEL --- */
+        /* --- 3. WHEEL (ТОЧНЫЙ РАСЧЕТ ПОД СТРЕЛКУ СВЕРХУ) --- */
         const canvas = document.getElementById('wheel-canvas');
         const ctx = canvas.getContext('2d');
         const wheelSectors = [0, 2, 0.5, 3, 0, 1.5, 0.2, 5];
+        
         function drawWheel(angle = 0) {
-            let arc = (2 * Math.PI) / wheelSectors.length;
+            let numSectors = wheelSectors.length;
+            let arc = (2 * Math.PI) / numSectors;
             ctx.clearRect(0, 0, 280, 280);
-            for (let i = 0; i < wheelSectors.length; i++) {
+            
+            for (let i = 0; i < numSectors; i++) {
                 let sa = angle + i * arc;
-                ctx.beginPath(); ctx.fillStyle = i % 2 === 0 ? '#6d28d9' : '#a855f7';
-                ctx.moveTo(140, 140); ctx.arc(140, 140, 120, sa, sa + arc); ctx.fill();
-                ctx.save(); ctx.translate(140, 140); ctx.rotate(sa + arc / 2);
-                ctx.fillStyle = '#fff'; ctx.font = 'bold 14px sans-serif';
-                ctx.fillText(`x${wheelSectors[i]}`, 60, 5); ctx.restore();
+                ctx.beginPath();
+                ctx.fillStyle = i % 2 === 0 ? '#6d28d9' : '#a855f7';
+                ctx.moveTo(140, 140);
+                ctx.arc(140, 140, 120, sa, sa + arc);
+                ctx.fill();
+                
+                ctx.save();
+                ctx.translate(140, 140);
+                ctx.rotate(sa + arc / 2);
+                ctx.fillStyle = '#fff';
+                ctx.font = 'bold 14px sans-serif';
+                ctx.fillText(`x${wheelSectors[i]}`, 60, 5);
+                ctx.restore();
             }
         }
+
         function spinWheel() {
             if(!validateBet('wheel')) return;
             let bet = parseInt(document.getElementById('wheel-bet').value);
@@ -444,18 +474,31 @@
             updateBalance(-bet, 'Колесо Ставка');
             let btn = document.getElementById('wheel-btn'); btn.disabled = true;
 
-            let rot = Math.PI * 8 + Math.random() * Math.PI * 2, start = performance.now();
+            let extraRotations = Math.PI * 8 + Math.random() * Math.PI * 2;
+            let start = performance.now();
+
             function anim(time) {
                 let prog = Math.min((time - start) / 2500, 1);
                 let ease = 1 - Math.pow(1 - prog, 3);
-                drawWheel(rot * ease);
-                if(prog < 1) requestAnimationFrame(anim);
-                else {
+                let currentAngle = extraRotations * ease;
+                drawWheel(currentAngle);
+
+                if(prog < 1) {
+                    requestAnimationFrame(anim);
+                } else {
                     btn.disabled = false;
-                    let norm = (2.5 * Math.PI - ((rot * ease) % (2 * Math.PI))) % (2 * Math.PI);
-                    let idx = Math.floor(norm / ((2 * Math.PI) / wheelSectors.length));
+                    let numSectors = wheelSectors.length;
+                    let arc = (2 * Math.PI) / numSectors;
+                    
+                    // Нормализация угла относительного верхнего указателя (12 часов = -90 град = -PI/2)
+                    let finalAngle = currentAngle % (2 * Math.PI);
+                    let pointerAngle = (3 * Math.PI / 2 - finalAngle) % (2 * Math.PI);
+                    if (pointerAngle < 0) pointerAngle += 2 * Math.PI;
+
+                    let idx = Math.floor(pointerAngle / arc) % numSectors;
                     let mult = wheelSectors[idx];
                     let win = Math.floor(bet * mult);
+
                     if(win > 0) updateBalance(win, 'Колесо Выигрыш');
                     showNotice(mult >= 1 ? '🎉 Выигрыш!' : '📉 Проигрыш', `x${mult} (${win} VIR)`, mult >= 1);
                 }
@@ -481,14 +524,12 @@
 
         function handleMinesAction() {
             if(minesGameActive) {
-                // Забрать выигрыш
                 let currentMult = activeMults[openedCount - 1] || 1;
                 let win = Math.floor(currentMinesBet * currentMult);
                 updateBalance(win, 'Мины Выигрыш');
                 showNotice('💰 ЗАБРАЛ!', `+${win} VIR (x${currentMult})`, true);
                 endMinesGame(true);
             } else {
-                // Начать игру
                 if(!validateBet('mines')) return;
                 let bet = parseInt(document.getElementById('mines-bet').value);
                 let count = parseInt(document.getElementById('mines-count').value) || 3;
@@ -504,7 +545,6 @@
                     if(!minePositions.includes(r)) minePositions.push(r);
                 }
 
-                // Расчет коэффициентов
                 activeMults = [];
                 let base = 1 + (count * 0.15);
                 for(let i=1; i<=30-count; i++) {
@@ -559,7 +599,6 @@
             btn.innerText = 'Начать игру 💣';
             btn.style.background = 'var(--green)';
 
-            // Вскрыть все мины
             let tiles = document.getElementById('mines-board').children;
             minePositions.forEach(p => {
                 if(tiles[p]) { tiles[p].innerText = '💣'; tiles[p].style.background = 'var(--red)'; }
