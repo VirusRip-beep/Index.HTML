@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>VIR Arcade Games</title>
+    <title>VIR CASINO WEB APP</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/matter-js/0.19.0/matter.min.js"></script>
     <style>
@@ -12,6 +12,7 @@
             --card-bg: #1e293b;
             --accent: #38bdf8;
             --accent-green: #22c55e;
+            --accent-red: #ef4444;
             --text-color: #f8fafc;
         }
         body {
@@ -19,7 +20,7 @@
             color: var(--text-color);
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
             margin: 0;
-            padding: 15px;
+            padding: 12px;
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -31,296 +32,324 @@
             justify-content: space-between;
             align-items: center;
             background: var(--card-bg);
-            padding: 12px 20px;
+            padding: 10px 16px;
             border-radius: 16px;
             box-sizing: border-box;
-            margin-bottom: 15px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            margin-bottom: 10px;
         }
-        .balance {
-            font-size: 18px;
-            font-weight: 700;
-            color: #facc15;
-        }
+        .balance { font-size: 16px; font-weight: 700; color: #facc15; }
         .nav-tabs {
             display: flex;
-            gap: 10px;
+            flex-wrap: wrap;
+            gap: 6px;
             width: 100%;
-            margin-bottom: 15px;
+            margin-bottom: 12px;
         }
         .tab-btn {
-            flex: 1;
-            padding: 12px;
+            flex: 1 1 30%;
+            padding: 8px 4px;
             background: var(--card-bg);
             border: 2px solid transparent;
             color: var(--text-color);
-            border-radius: 12px;
+            border-radius: 10px;
+            font-size: 12px;
             font-weight: 600;
             cursor: pointer;
-            transition: 0.2s;
+            text-align: center;
         }
-        .tab-btn.active {
-            border-color: var(--accent);
-            background: #0284c7;
-        }
+        .tab-btn.active { border-color: var(--accent); background: #0284c7; }
         .game-card {
             width: 100%;
             background: var(--card-bg);
-            border-radius: 20px;
-            padding: 15px;
+            border-radius: 16px;
+            padding: 12px;
             box-sizing: border-box;
             display: flex;
             flex-direction: column;
             align-items: center;
         }
-        canvas {
-            border-radius: 12px;
-            background: #090d16;
-            max-width: 100%;
-        }
-        .controls {
-            width: 100%;
-            margin-top: 15px;
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-        }
+        canvas { border-radius: 12px; background: #090d16; max-width: 100%; }
+        .controls { width: 100%; margin-top: 10px; display: flex; flex-direction: column; gap: 8px; }
         .bet-input {
-            width: 100%;
-            padding: 12px;
-            border-radius: 10px;
-            border: 1px solid #334155;
-            background: #0f172a;
-            color: #fff;
-            font-size: 16px;
-            text-align: center;
-            box-sizing: border-box;
+            width: 100%; padding: 10px; border-radius: 8px;
+            border: 1px solid #334155; background: #0f172a;
+            color: #fff; font-size: 15px; text-align: center; box-sizing: border-box;
         }
         .action-btn {
-            width: 100%;
-            padding: 14px;
-            border: none;
-            border-radius: 12px;
-            background: var(--accent-green);
-            color: white;
-            font-size: 16px;
-            font-weight: bold;
-            cursor: pointer;
+            width: 100%; padding: 12px; border: none; border-radius: 10px;
+            background: var(--accent-green); color: white; font-size: 15px; font-weight: bold; cursor: pointer;
         }
-        .action-btn:disabled { opacity: 0.5; }
+        /* Mines Grid */
+        .mines-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; width: 100%; max-width: 240px; margin: 15px 0; }
+        .mine-tile { height: 70px; background: #0f172a; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 24px; cursor: pointer; }
+        /* Slots */
+        .slots-container { display: flex; gap: 10px; margin: 20px 0; font-size: 50px; background: #0f172a; padding: 15px; border-radius: 12px; }
     </style>
 </head>
 <body>
 
     <div class="header">
-        <span>🎮 VIR Arcade</span>
+        <span id="user-name">👤 Игрок</span>
         <div class="balance">💰 <span id="user-balance">500</span> VIR</div>
     </div>
 
+    <!-- Навигация 5 Игр + Профиль -->
     <div class="nav-tabs">
-        <button class="tab-btn active" onclick="switchGame('plinko')">🟢 Plinko</button>
-        <button class="tab-btn" onclick="switchGame('wheel')">🎡 Колесо</button>
+        <button class="tab-btn active" onclick="switchTab('plinko', this)">🟢 Plinko</button>
+        <button class="tab-btn" onclick="switchTab('wheel', this)">🎡 Колесо</button>
+        <button class="tab-btn" onclick="switchTab('slots', this)">🎰 Слоты</button>
+        <button class="tab-btn" onclick="switchTab('mines', this)">💣 Мины</button>
+        <button class="tab-btn" onclick="switchTab('coin', this)">🪙 Монета</button>
+        <button class="tab-btn" onclick="switchTab('profile', this)" style="background: #475569;">👤 Профиль</button>
     </div>
 
-    <!-- PLINKO GAME -->
-    <div id="plinko-game" class="game-card">
+    <!-- 1. PLINKO -->
+    <div id="plinko-game" class="game-card tab-content">
         <div id="plinko-board"></div>
         <div class="controls">
-            <input type="number" id="plinko-bet" class="bet-input" value="50" min="10" placeholder="Ставка">
-            <button class="action-btn" id="drop-btn" onclick="dropBall()">Спустить шар</button>
+            <input type="number" id="plinko-bet" class="bet-input" value="50" min="10">
+            <button class="action-btn" onclick="dropBall()">Спустить шар</button>
         </div>
     </div>
 
-    <!-- WHEEL GAME -->
-    <div id="wheel-game" class="game-card" style="display: none;">
-        <canvas id="wheel-canvas" width="300" height="300"></canvas>
+    <!-- 2. WHEEL -->
+    <div id="wheel-game" class="game-card tab-content" style="display:none;">
+        <canvas id="wheel-canvas" width="280" height="280"></canvas>
         <div class="controls">
-            <input type="number" id="wheel-bet" class="bet-input" value="50" min="10" placeholder="Ставка">
-            <button class="action-btn" onclick="spinWheel()">Крутить колесо</button>
+            <input type="number" id="wheel-bet" class="bet-input" value="50" min="10">
+            <button class="action-btn" onclick="spinWheel()">Крутить</button>
         </div>
+    </div>
+
+    <!-- 3. SLOTS -->
+    <div id="slots-game" class="game-card tab-content" style="display:none;">
+        <div class="slots-container">
+            <span id="s1">7️⃣</span><span id="s2">7️⃣</span><span id="s3">7️⃣</span>
+        </div>
+        <div class="controls">
+            <input type="number" id="slots-bet" class="bet-input" value="50" min="10">
+            <button class="action-btn" onclick="spinSlots()">Крутить слоты</button>
+        </div>
+    </div>
+
+    <!-- 4. MINES -->
+    <div id="mines-game" class="game-card tab-content" style="display:none;">
+        <div class="mines-grid" id="mines-board"></div>
+        <div class="controls">
+            <input type="number" id="mines-bet" class="bet-input" value="50" min="10">
+            <button class="action-btn" id="mines-start-btn" onclick="startMines()">Начать игру</button>
+        </div>
+    </div>
+
+    <!-- 5. COIN FLIP -->
+    <div id="coin-game" class="game-card tab-content" style="display:none;">
+        <div style="font-size: 80px; margin: 20px;" id="coin-icon">🪙</div>
+        <div class="controls">
+            <input type="number" id="coin-bet" class="bet-input" value="50" min="10">
+            <div style="display:flex; gap: 10px;">
+                <button class="action-btn" onclick="flipCoin('орёл')">Орёл</button>
+                <button class="action-btn" style="background:#0284c7;" onclick="flipCoin('решка')">Решка</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 6. PROFILE & BONUS -->
+    <div id="profile-page" class="game-card tab-content" style="display:none; text-align: center;">
+        <h2 style="margin: 5px 0;">Профиль</h2>
+        <p id="prof-id">ID: -</p>
+        <p id="prof-balance">Баланс: 500 VIR</p>
+        <button class="action-btn" id="bonus-btn" onclick="claimBonus()" style="margin-top: 15px;">🎁 Забрать бонус (+1000 VIR)</button>
     </div>
 
     <script>
         const tg = window.Telegram.WebApp;
         tg.expand();
 
-        let balance = 500;
-        const balanceEl = document.getElementById('user-balance');
+        let balance = intStorage('vir_balance', 500);
+        let lastBonus = localStorage.getItem('vir_last_bonus');
 
-        function updateBalance(amount) {
-            balance += amount;
-            balanceEl.innerText = balance;
+        // Данные юзера из Телеграм
+        if (tg.initDataUnsafe && tg.initDataUnsafe.user) {
+            document.getElementById('user-name').innerText = '👤 ' + tg.initDataUnsafe.user.first_name;
+            document.getElementById('prof-id').innerText = 'ID: ' + tg.initDataUnsafe.user.id;
         }
 
-        function switchGame(game) {
-            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
-            if(game === 'plinko') {
-                document.getElementById('plinko-game').style.display = 'flex';
-                document.getElementById('wheel-game').style.display = 'none';
-                event.target.classList.add('active');
-            } else {
-                document.getElementById('plinko-game').style.display = 'none';
-                document.getElementById('wheel-game').style.display = 'flex';
-                event.target.classList.add('active');
-                drawWheel();
-            }
+        function intStorage(key, def) {
+            let val = localStorage.getItem(key);
+            return val ? parseInt(val) : def;
         }
 
-        /* --- PLINKO ENGINE (Matter.js) --- */
+        function updateBalance(amt) {
+            balance += amt;
+            localStorage.setItem('vir_balance', balance);
+            document.getElementById('user-balance').innerText = balance;
+            document.getElementById('prof-balance').innerText = 'Баланс: ' + balance + ' VIR';
+        }
+        updateBalance(0);
+
+        function switchTab(tab, btn) {
+            document.querySelectorAll('.tab-content').forEach(c => c.style.display = 'none');
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            document.getElementById(tab + (tab === 'profile' ? '-page' : '-game')).style.display = 'flex';
+            btn.classList.add('active');
+            if(tab === 'wheel') drawWheel();
+            if(tab === 'mines' && document.getElementById('mines-board').children.length === 0) setupMinesGrid();
+        }
+
+        /* --- 1. PLINKO --- */
         const { Engine, Render, Runner, Bodies, Composite, Events } = Matter;
         const engine = Engine.create();
-        const world = engine.world;
-
-        const boardWidth = 320;
-        const boardHeight = 380;
-        
         const render = Render.create({
             element: document.getElementById('plinko-board'),
             engine: engine,
-            options: { width: boardWidth, height: boardHeight, wireframes: false, background: '#090d16' }
+            options: { width: 280, height: 320, wireframes: false, background: '#090d16' }
         });
-
-        // Пины (пеги)
-        const rows = 7;
-        for (let i = 0; i < rows; i++) {
-            const count = i + 3;
-            const spacing = boardWidth / (count + 1);
+        for (let i = 0; i < 6; i++) {
+            let count = i + 3;
+            let spacing = 280 / (count + 1);
             for (let j = 0; j < count; j++) {
-                const peg = Bodies.circle((j + 1) * spacing, 50 + i * 40, 4, {
-                    isStatic: true,
-                    render: { fillStyle: '#38bdf8' }
-                });
-                Composite.add(world, peg);
+                Composite.add(engine.world, Bodies.circle((j + 1) * spacing, 40 + i * 40, 4, { isStatic: true, render: { fillStyle: '#38bdf8' } }));
             }
         }
-
-        // Мультипликаторы
-        const multipliers = [0.2, 0.5, 2, 0.5, 0.2];
-        const bucketWidth = boardWidth / multipliers.length;
-        const buckets = [];
-
-        for (let i = 0; i < multipliers.length; i++) {
-            const sensor = Bodies.rectangle(
-                i * bucketWidth + bucketWidth / 2, 
-                boardHeight - 10, 
-                bucketWidth - 4, 
-                20, 
-                { isStatic: true, isSensor: true, render: { fillStyle: '#1e293b' }, label: `mult_${multipliers[i]}` }
-            );
-            buckets.push(sensor);
-            Composite.add(world, sensor);
+        const mults = [0.2, 0.5, 2, 0.5, 0.2];
+        const bWidth = 280 / mults.length;
+        for (let i = 0; i < mults.length; i++) {
+            Composite.add(engine.world, Bodies.rectangle(i * bWidth + bWidth / 2, 310, bWidth - 4, 20, { isStatic: true, isSensor: true, render: { fillStyle: '#1e293b' }, label: `m_${mults[i]}` }));
         }
-
-        Render.run(render);
-        Runner.run(Runner.create(), engine);
+        Render.run(render); Runner.run(Runner.create(), engine);
 
         function dropBall() {
-            const betInput = document.getElementById('plinko-bet');
-            const bet = parseInt(betInput.value);
-
-            if (isNaN(bet) || bet <= 0 || bet > balance) return;
-
+            let bet = parseInt(document.getElementById('plinko-bet').value);
+            if(isNaN(bet) || bet <= 0 || bet > balance) return alert('Недостаточно баланса!');
             updateBalance(-bet);
-            const dropX = boardWidth / 2 + (Math.random() * 20 - 10);
-            const ball = Bodies.circle(dropX, 10, 8, {
-                restitution: 0.8,
-                friction: 0.05,
-                render: { fillStyle: '#ef4444' },
-                label: `ball_${bet}`
-            });
-            Composite.add(world, ball);
+            let ball = Bodies.circle(140 + (Math.random()*10 - 5), 10, 7, { restitution: 0.8, render: { fillStyle: '#ef4444' }, label: `b_${bet}` });
+            Composite.add(engine.world, ball);
         }
-
-        // Перехват попадания шара в корзину
-        Events.on(engine, 'collisionStart', (event) => {
-            event.pairs.forEach((pair) => {
-                const { bodyA, bodyB } = pair;
-                const ball = bodyA.label.startsWith('ball_') ? bodyA : (bodyB.label.startsWith('ball_') ? bodyB : null);
-                const bucket = bodyA.label.startsWith('mult_') ? bodyA : (bodyB.label.startsWith('mult_') ? bodyB : null);
-
-                if (ball && bucket) {
-                    const bet = parseFloat(ball.label.split('_')[1]);
-                    const mult = parseFloat(bucket.label.split('_')[1]);
-                    const win = Math.floor(bet * mult);
-                    
+        Events.on(engine, 'collisionStart', (e) => {
+            e.pairs.forEach((p) => {
+                let b = p.bodyA.label.startsWith('b_') ? p.bodyA : (p.bodyB.label.startsWith('b_') ? p.bodyB : null);
+                let m = p.bodyA.label.startsWith('m_') ? p.bodyA : (p.bodyB.label.startsWith('m_') ? p.bodyB : null);
+                if(b && m) {
+                    let win = Math.floor(parseFloat(b.label.split('_')[1]) * parseFloat(m.label.split('_')[1]));
                     updateBalance(win);
-                    Composite.remove(world, ball);
+                    Composite.remove(engine.world, b);
                 }
             });
         });
 
-        /* --- WHEEL GAME ENGINE --- */
+        /* --- 2. WHEEL --- */
         const canvas = document.getElementById('wheel-canvas');
         const ctx = canvas.getContext('2d');
-        const wheelSectors = [0, 2, 0.5, 5, 0, 1.5, 0.2, 3];
-        let isSpinning = false;
-
+        const sectors = [0, 2, 0.5, 3, 0, 1.5, 0.2, 5];
         function drawWheel(angle = 0) {
-            const numSectors = wheelSectors.length;
-            const arc = (2 * Math.PI) / numSectors;
-            ctx.clearRect(0, 0, 300, 300);
-
-            for (let i = 0; i < numSectors; i++) {
-                const sectorAngle = angle + i * arc;
-                ctx.beginPath();
-                ctx.fillStyle = i % 2 === 0 ? '#0284c7' : '#38bdf8';
-                ctx.moveTo(150, 150);
-                ctx.arc(150, 150, 130, sectorAngle, sectorAngle + arc);
-                ctx.lineTo(150, 150);
-                ctx.fill();
-
-                ctx.save();
-                ctx.translate(150, 150);
-                ctx.rotate(sectorAngle + arc / 2);
-                ctx.fillStyle = '#fff';
-                ctx.font = 'bold 16px sans-serif';
-                ctx.fillText(`x${wheelSectors[i]}`, 70, 5);
-                ctx.restore();
+            let arc = (2 * Math.PI) / sectors.length;
+            ctx.clearRect(0, 0, 280, 280);
+            for (let i = 0; i < sectors.length; i++) {
+                let sa = angle + i * arc;
+                ctx.beginPath(); ctx.fillStyle = i % 2 === 0 ? '#0284c7' : '#38bdf8';
+                ctx.moveTo(140, 140); ctx.arc(140, 140, 120, sa, sa + arc); ctx.fill();
+                ctx.save(); ctx.translate(140, 140); ctx.rotate(sa + arc / 2);
+                ctx.fillStyle = '#fff'; ctx.font = 'bold 14px sans-serif';
+                ctx.fillText(`x${sectors[i]}`, 60, 5); ctx.restore();
             }
         }
-
         function spinWheel() {
-            if (isSpinning) return;
-            const betInput = document.getElementById('wheel-bet');
-            const bet = parseInt(betInput.value);
-
-            if (isNaN(bet) || bet <= 0 || bet > balance) return;
-
+            let bet = parseInt(document.getElementById('wheel-bet').value);
+            if(isNaN(bet) || bet <= 0 || bet > balance) return alert('Недостаточно баланса!');
             updateBalance(-bet);
-            isSpinning = true;
-
-            let currentAngle = 0;
-            const targetRotation = Math.PI * 8 + Math.random() * Math.PI * 2;
-            const duration = 3000;
-            const start = performance.now();
-
-            function animate(time) {
-                let elapsed = time - start;
-                if (elapsed > duration) elapsed = duration;
-
-                const progress = elapsed / duration;
-                const easeOut = 1 - Math.pow(1 - progress, 3);
-                currentAngle = targetRotation * easeOut;
-
-                drawWheel(currentAngle);
-
-                if (elapsed < duration) {
-                    requestAnimationFrame(animate);
-                } else {
-                    isSpinning = false;
-                    const numSectors = wheelSectors.length;
-                    const arc = (2 * Math.PI) / numSectors;
-                    const normalizedAngle = (2 * Math.PI - (currentAngle % (2 * Math.PI))) % (2 * Math.PI);
-                    const winIndex = Math.floor(normalizedAngle / arc);
-                    const mult = wheelSectors[winIndex];
-
-                    updateBalance(Math.floor(bet * mult));
+            let rot = Math.PI * 8 + Math.random() * Math.PI * 2, start = performance.now();
+            function anim(time) {
+                let prog = Math.min((time - start) / 3000, 1);
+                let ease = 1 - Math.pow(1 - prog, 3);
+                drawWheel(rot * ease);
+                if(prog < 1) requestAnimationFrame(anim);
+                else {
+                    let norm = (2 * Math.PI - ((rot * ease) % (2 * Math.PI))) % (2 * Math.PI);
+                    let idx = Math.floor(norm / ((2 * Math.PI) / sectors.length));
+                    updateBalance(Math.floor(bet * sectors[idx]));
                 }
             }
-            requestAnimationFrame(animate);
+            requestAnimationFrame(anim);
         }
 
-        drawWheel();
+        /* --- 3. SLOTS --- */
+        const slotItems = ['7️⃣', '🍒', '🍋', '💎', '🔔'];
+        function spinSlots() {
+            let bet = parseInt(document.getElementById('slots-bet').value);
+            if(isNaN(bet) || bet <= 0 || bet > balance) return alert('Недостаточно баланса!');
+            updateBalance(-bet);
+            let r1 = slotItems[Math.floor(Math.random()*slotItems.length)];
+            let r2 = slotItems[Math.floor(Math.random()*slotItems.length)];
+            let r3 = slotItems[Math.floor(Math.random()*slotItems.length)];
+            document.getElementById('s1').innerText = r1;
+            document.getElementById('s2').innerText = r2;
+            document.getElementById('s3').innerText = r3;
+            if(r1 === r2 && r2 === r3) updateBalance(bet * 5);
+            else if(r1 === r2 || r2 === r3 || r1 === r3) updateBalance(bet * 1.5);
+        }
+
+        /* --- 4. MINES --- */
+        let minePos = -1, minesActive = false, currentMinesBet = 0;
+        function setupMinesGrid() {
+            let board = document.getElementById('mines-board');
+            board.innerHTML = '';
+            for(let i=0; i<9; i++) {
+                let tile = document.createElement('div');
+                tile.className = 'mine-tile';
+                tile.innerText = '❓';
+                tile.onclick = () => clickMine(i, tile);
+                board.appendChild(tile);
+            }
+        }
+        function startMines() {
+            let bet = parseInt(document.getElementById('mines-bet').value);
+            if(isNaN(bet) || bet <= 0 || bet > balance) return alert('Недостаточно баланса!');
+            updateBalance(-bet);
+            currentMinesBet = bet;
+            minePos = Math.floor(Math.random() * 9);
+            minesActive = true;
+            setupMinesGrid();
+        }
+        function clickMine(idx, tile) {
+            if(!minesActive || tile.innerText !== '❓') return;
+            if(idx === minePos) {
+                tile.innerText = '💣'; tile.style.background = '#ef4444';
+                minesActive = false; alert('Бум! Ты подорвался.');
+            } else {
+                tile.innerText = '💎'; tile.style.background = '#22c55e';
+                minesActive = false;
+                updateBalance(currentMinesBet * 2);
+                alert('Чисто! Выигрыш: +' + (currentMinesBet * 2) + ' VIR');
+            }
+        }
+
+        /* --- 5. COIN FLIP --- */
+        function flipCoin(choice) {
+            let bet = parseInt(document.getElementById('coin-bet').value);
+            if(isNaN(bet) || bet <= 0 || bet > balance) return alert('Недостаточно баланса!');
+            updateBalance(-bet);
+            let res = Math.random() > 0.5 ? 'орёл' : 'решка';
+            document.getElementById('coin-icon').innerText = res === 'орёл' ? '🪙' : '👑';
+            if(choice === res) {
+                updateBalance(bet * 2);
+                alert('Угадал! Результат: ' + res + '. Выигрыш: +' + (bet * 2));
+            } else {
+                alert('Не угадал! Выпал: ' + res);
+            }
+        }
+
+        /* --- 6. BONUS --- */
+        function claimBonus() {
+            let now = new Date().getTime();
+            if(lastBonus && (now - parseInt(lastBonus)) < 86400000) {
+                let hrs = Math.ceil((86400000 - (now - parseInt(lastBonus))) / 3600000);
+                return alert('Заходи через ' + hrs + ' ч.');
+            }
+            lastBonus = now;
+            localStorage.setItem('vir_last_bonus', now);
+            updateBalance(1000);
+            alert('Ты получил +1000 VIR!');
+        }
     </script>
 </body>
 </html>
